@@ -1,7 +1,12 @@
 package main
 
 import (
+	"log"
+	"os"
 	"os/exec"
+	"os/signal"
+	"runtime"
+	"syscall"
 
 	"github.com/gin-gonic/gin"
 )
@@ -17,19 +22,23 @@ func main() {
 		router.Run(":8080")
 	}()
 
-	chromePath := "/usr/bin/google-chrome-stable"
+	var chromePath string
+	switch runtime.GOOS {
+	case "windows":
+		chromePath = os.Getenv("ProgramFiles(x86)") + "/Google/Chrome/Application/chrome.exe"
+	default:
+		chromePath = "/usr/bin/google-chrome-stable"
+	}
 	cmd := exec.Command(chromePath, "--app=http://localhost:8080")
 	cmd.Start()
-	select {}
-	// 主线程结束，其中的协程也结束
-	/*
-		for {}
-		go程 无限 1k～1w个
-		ErrServerClose
-		
-		阻塞 就像等待戈多（同步读） 什么都不能做 挂起(快照，进程消失？)
-		死循环并不是阻塞
-	*/
+
+	chSignal := make(chan os.Signal, 1)
+	signal.Notify(chSignal, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
+	<-chSignal
+	err := cmd.Process.Kill()
+	if err != nil {
+		log.Println(cmd.Process.Pid, err)
+	}
 
 	// ui, _ := lorca.New("https://bilibili.com", "", 600, 400)
 	// chSignal := make(chan os.Signal, 1)
