@@ -5,6 +5,7 @@ import (
 	"io/fs"
 	"io/ioutil"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -26,6 +27,7 @@ func main() {
 		gin.SetMode(gin.DebugMode)
 		router := gin.Default()
 		staticFiles, _ := fs.Sub(FS, "frontend/dist")
+		router.GET("/api/v1/addresses", AddressesController)
 		router.POST("/api/v1/texts", TextsController)
 		// 静态路由
 		router.StaticFS("/static", http.FS(staticFiles))
@@ -58,6 +60,19 @@ func main() {
 	case <-ui.Done():
 	}
 	ui.Close()
+}
+
+func AddressesController(c *gin.Context) {
+	addrs, _ := net.InterfaceAddrs()
+	var result []string
+	for _, address := range addrs {
+		if ipnet, ok := address.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
+			if ipnet.IP.To4() != nil {
+				result = append(result, ipnet.IP.To4().String())
+			}
+		}
+	}
+	c.JSON(http.StatusOK, gin.H{"addresses": result})
 }
 
 func TextsController(c *gin.Context) {
