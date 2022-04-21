@@ -83,13 +83,12 @@ func FilesController(c *gin.Context) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	filename := uuid.New().String() // 存
-	filename += filepath.Ext(file.Filename)
+	filename := uuid.New().String() + filepath.Ext(file.Filename) // 存
 	fileErr := c.SaveUploadedFile(file, filepath.Join(uploadsDir, filename))
 	if fileErr != nil {
 		log.Fatal(fileErr)
 	}
-	c.JSON(http.StatusOK, gin.H{"url": "/" + path.Join("uploads", filename)})
+	c.JSON(http.StatusOK, gin.H{"url": path.Join("/uploads", filename)})
 }
 
 func GetFilePath(name string) string {
@@ -152,12 +151,11 @@ func TextsController(c *gin.Context) {
 		}
 		log.Println("dir=" + uploadsDir)
 
-		filename := uuid.New().String() //4. 生成文件名
-		fullpath := path.Join("uploads", filename+".txt")
-		err = ioutil.WriteFile(filepath.Join(exeDir, fullpath), []byte(json.Raw), 0644) //5. 写入文件
+		filename := uuid.New().String() + ".txt"                                            //4. 生成文件名
+		err = ioutil.WriteFile(filepath.Join(uploadsDir, filename), []byte(json.Raw), 0644) //5. 写入文件
 		if err != nil {
 			log.Fatal(err)
 		}
-		c.JSON(http.StatusOK, gin.H{"url": "/" + fullpath})
+		c.JSON(http.StatusOK, gin.H{"url": path.Join("/uploads", filename)})
 	}
 }
