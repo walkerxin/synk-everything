@@ -24,10 +24,12 @@ import (
 var FS embed.FS
 
 func main() {
+	port := "27149"
 	go func() {
 		gin.SetMode(gin.DebugMode)
 		router := gin.Default()
 		staticFiles, _ := fs.Sub(FS, "frontend/dist")
+		router.POST("api/v1/files", FilesController)
 		router.GET("/api/v1/qrcodes", QrcodesController)
 		router.GET("/api/v1/addresses", AddressesController)
 		router.POST("/api/v1/texts", TextsController)
@@ -50,10 +52,10 @@ func main() {
 				c.Status(http.StatusNotFound)
 			}
 		})
-		router.Run(":8080")
+		router.Run(":" + port)
 	}()
 
-	ui, _ := lorca.New("http://localhost:8080/static", "", 1000, 600)
+	ui, _ := lorca.New("http://localhost:"+port+"/static", "", 1000, 600)
 
 	chSignal := make(chan os.Signal, 1)
 	signal.Notify(chSignal, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
@@ -62,6 +64,31 @@ func main() {
 	case <-ui.Done():
 	}
 	ui.Close()
+}
+
+func FilesController(c *gin.Context) {
+	file, err := c.FormFile("raw") // 获取单个表单文件
+	if err != nil {
+		c.Status(http.StatusBadRequest)
+		return
+	}
+	exe, err := os.Executable() // 创建目录
+	if err != nil {
+		log.Fatal(err)
+	}
+	exeDir := filepath.Dir(exe)
+	uploadsDir := filepath.Join(exeDir, "uploads")
+	err = os.MkdirAll(uploadsDir, os.ModePerm)
+	if err != nil {
+		log.Fatal(err)
+	}
+	filename := uuid.New().String() // 存
+	filename += filepath.Ext(file.Filename)
+	fileErr := c.SaveUploadedFile(file, filepath.Join(uploadsDir, filename))
+	if fileErr != nil {
+		log.Fatal(fileErr)
+	}
+	c.JSON(http.StatusOK, gin.H{"url": "/" + path.Join("uploads", filename)})
 }
 
 // "qrcodes?content=" 获取查询字符串
