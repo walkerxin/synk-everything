@@ -30,6 +30,7 @@ func main() {
 		router := gin.Default()
 		staticFiles, _ := fs.Sub(FS, "frontend/dist")
 		router.POST("api/v1/files", FilesController)
+		router.GET("/uploads/:path", UploadsController)
 		router.GET("/api/v1/qrcodes", QrcodesController)
 		router.GET("/api/v1/addresses", AddressesController)
 		router.POST("/api/v1/texts", TextsController)
@@ -89,6 +90,21 @@ func FilesController(c *gin.Context) {
 		log.Fatal(fileErr)
 	}
 	c.JSON(http.StatusOK, gin.H{"url": "/" + path.Join("uploads", filename)})
+}
+
+func GetFilePath(name string) string {
+	exe, err := os.Executable()
+	if err != nil {
+		log.Fatal(err)
+	}
+	exeDir := filepath.Dir(exe)
+	return filepath.Join(exeDir, "uploads", name)
+}
+
+// "/uploads/xxx"
+func UploadsController(c *gin.Context) {
+	name := c.Param("path")
+	c.File(GetFilePath(name)) // 拼出文件完整路径，返回文件
 }
 
 // "qrcodes?content=" 获取查询字符串
