@@ -16,6 +16,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/skip2/go-qrcode"
 	"github.com/zserge/lorca"
 )
 
@@ -27,6 +28,7 @@ func main() {
 		gin.SetMode(gin.DebugMode)
 		router := gin.Default()
 		staticFiles, _ := fs.Sub(FS, "frontend/dist")
+		router.GET("/api/v1/qrcodes", QrcodesController)
 		router.GET("/api/v1/addresses", AddressesController)
 		router.POST("/api/v1/texts", TextsController)
 		// 静态路由
@@ -51,7 +53,7 @@ func main() {
 		router.Run(":8080")
 	}()
 
-	ui, _ := lorca.New("http://localhost:8080/static", "", 800, 600)
+	ui, _ := lorca.New("http://localhost:8080/static", "", 1000, 600)
 
 	chSignal := make(chan os.Signal, 1)
 	signal.Notify(chSignal, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
@@ -60,6 +62,19 @@ func main() {
 	case <-ui.Done():
 	}
 	ui.Close()
+}
+
+// "qrcodes?content=" 获取查询字符串
+func QrcodesController(c *gin.Context) {
+	if content := c.Query("content"); content != "" {
+		png, err := qrcode.Encode(content, qrcode.Medium, 256)
+		if err != nil {
+			log.Fatal(err)
+		}
+		c.Data(http.StatusOK, "image/png", png) // 为了在前端展示（不设置未二进制流）
+	} else {
+		c.Status(http.StatusBadRequest)
+	}
 }
 
 func AddressesController(c *gin.Context) {
