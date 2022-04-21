@@ -1,4 +1,4 @@
-module walkerxin/synk-with-go.git
+module walkerxin/synk-everything.git
 
 go 1.17
 
