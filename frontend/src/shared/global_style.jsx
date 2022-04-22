@@ -10,6 +10,7 @@ const spin = keyframes`
 export const GlobalStyle = createGlobalStyle`
   * { box-sizing: border-box; padding: 0; margin: 0; }
   *::before, *::after {box-sizing: border-box;}
+  *:not(textarea) { user-select: none; }
   body {
     font-size: 16px;
     font-family: -apple-system, "Noto Sans", "Helvetica Neue", Helvetica, "Nimbus Sans L", Arial, "Liberation Sans", "PingFang SC", "Hiragino Sans GB", "Noto Sans CJK SC", "Source Han Sans SC", "Source Han Sans CN", "Microsoft YaHei", "Wenquanyi Micro Hei", "WenQuanYi Zen Hei", "ST Heiti", SimHei, "WenQuanYi Zen Hei Sharp", sans-serif;
